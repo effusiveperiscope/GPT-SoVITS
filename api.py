@@ -669,6 +669,9 @@ def handle_control(command):
 
 
 def handle_change(path, text, language):
+    with open(text) as inp:
+        text = inp.read().strip()
+
     if is_empty(path, text, language):
         return JSONResponse({"code": 400, "message": '缺少任意一项以下参数: "path", "text", "language"'}, status_code=400)
 
@@ -689,6 +692,10 @@ def handle_change(path, text, language):
 
 
 def handle(refer_wav_path, prompt_text, prompt_language, text, text_language, cut_punc, top_k, top_p, temperature, speed, inp_refs):
+    if prompt_text:
+        with open(prompt_text) as inp:
+            prompt_text = inp.read().strip()
+
     if (
             refer_wav_path == "" or refer_wav_path is None
             or prompt_text == "" or prompt_text is None
