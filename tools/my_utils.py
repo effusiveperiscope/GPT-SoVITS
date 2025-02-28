@@ -14,7 +14,7 @@ def load_audio(file, sr):
         file = clean_path(file)  # 防止小白拷路径头尾带了空格和"和回车
         if os.path.exists(file) == False:
             raise RuntimeError(
-                "You input a wrong audio path that does not exists, please fix it!"
+                f"You input a wrong audio path that does not exists: {file}, please fix it!"
             )
         out, _ = (
             ffmpeg.input(file, threads=0)
