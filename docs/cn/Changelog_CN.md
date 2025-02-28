@@ -160,9 +160,9 @@
 1-修复无参考文本模式问题
 
 2-优化中英文文本前端
-	
+
 3-api格式优化
-	
+
 4-cmd格式问题修复
 
 5-训练数据处理阶段不支持的语言提示报错
@@ -235,13 +235,54 @@
 ### 20240821
 
 1-fast_inference分支合并进main：https://github.com/RVC-Boss/GPT-SoVITS/pull/1490
- 
+
 2-支持通过ssml标签优化数字、电话、时间日期等：https://github.com/RVC-Boss/GPT-SoVITS/issues/1508
- 
+
 3-api修复优化：https://github.com/RVC-Boss/GPT-SoVITS/pull/1503
- 
+
 4-修复了参考音频混合只能上传一条的bug:https://github.com/RVC-Boss/GPT-SoVITS/pull/1422
- 
+
 5-增加了各种数据集检查,若缺失会弹出warning:https://github.com/RVC-Boss/GPT-SoVITS/pull/1422
 
+### 20250211
 
+增加gpt-sovits-v3模型，需要14G显存可以微调
+
+### 20250212
+
+sovits-v3微调支持开启梯度检查点，需要12G显存可以微调https://github.com/RVC-Boss/GPT-SoVITS/pull/2040
+
+### 20250214
+
+优化多语种混合文本切分策略a https://github.com/RVC-Boss/GPT-SoVITS/pull/2047
+
+### 20250217
+
+优化文本里的数字和英文处理逻辑https://github.com/RVC-Boss/GPT-SoVITS/pull/2062
+
+### 20250218
+
+优化多语种混合文本切分策略b https://github.com/RVC-Boss/GPT-SoVITS/pull/2073
+
+### 20250223
+
+1-sovits-v3微调支持lora训练，需要8G显存可以微调，效果比全参微调更好
+
+2-人声背景音分离增加mel band roformer模型支持https://github.com/RVC-Boss/GPT-SoVITS/pull/2078
+
+### 20250226
+
+https://github.com/RVC-Boss/GPT-SoVITS/pull/2112 https://github.com/RVC-Boss/GPT-SoVITS/pull/2114
+
+修复中文路径下mecab的报错（具体表现为日文韩文、文本混合语种切分可能会遇到的报错）
+
+### 20250227
+
+针对v3生成24k音频感觉闷的问题https://github.com/RVC-Boss/GPT-SoVITS/issues/2085 https://github.com/RVC-Boss/GPT-SoVITS/issues/2117 ,支持使用24k to 48k的音频超分模型缓解。
+
+
+### 20250228
+
+修复短文本语种选择出错 https://github.com/RVC-Boss/GPT-SoVITS/pull/2122
+
+修复v3sovits未传参以支持调节语速
