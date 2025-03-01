@@ -16,7 +16,7 @@ CNHUBERT_BASE_DIR = "GPT_SoVITS/pretrained_models/chinese-hubert-base"
 # Note that there are two new pretrained models for v3
 S2G_MODEL_DIR = "GPT_SoVITS/pretrained_models/s2Gv3.pth"
 GPT_PRETRAINED_DIR = "GPT_SoVITS/pretrained_models/s1v3.ckpt"
-SOVITS_BATCH_SIZE = 16
+SOVITS_BATCH_SIZE = 4
 SOVITS_SAVE_FREQUENCY = 1
 SOVITS_LOW_LR_RATE = 0.4 # default value, hasn't caused issues
 GPT_BATCH_SIZE = 8
@@ -35,6 +35,8 @@ from config import python_exec,infer_device,is_half,exp_root,webui_port_main,web
 from subprocess import run
 from shutil import copy2, move
 import pandas as pd
+import json
+import yaml
 
 now_dir = os.getcwd()
 tmp_dir = os.path.join(now_dir, "TEMP")
@@ -87,7 +89,7 @@ def dataset_formatting(exp):
     
     if not os.path.exists(path_text):
         cmd = f"{python_exec} GPT_SoVITS/prepare_datasets/1-get-text.py"
-        p = run(cmd, shell=True, stdout=open(f'{opt_dir}/1-stdout.log', 'w'))
+        p = run(cmd, shell=True, stdout=open(f'{opt_dir}/1-stdout.log', 'w'), stderr=open(f'{opt_dir}/1-stderr.log', 'w'))
 
         # -0.txt is generated for GPU 0; there would be more if we used multiple GPUs
         assert os.path.exists(f"{opt_dir}/2-name2text-0.txt")
@@ -110,10 +112,11 @@ def dataset_formatting(exp):
         "pretrained_s2G": S2G_MODEL_DIR,
         "s2config_path": "GPT_SoVITS/configs/s2.json"
     })
+    os.environ.update(config)
 
     if not os.path.exists(path_semantic):
         cmd = f"{python_exec} GPT_SoVITS/prepare_datasets/3-get-semantic.py"
-        p = run(cmd, shell=True, stdout=open(f'{opt_dir}/3-stdout.log', 'w'))
+        p = run(cmd, shell=True, stdout=open(f'{opt_dir}/3-stdout.log', 'w'), stderr=open(f'{opt_dir}/3-stderr.log', 'w'))
 
         # (why did they switch to .tsv?)
         assert os.path.exists(f"{opt_dir}/6-name2semantic-0.tsv")
@@ -126,10 +129,11 @@ def dataset_formatting(exp):
         os.remove(f"{opt_dir}/6-name2semantic-0.tsv")
 
 # 2. finetuning
-def finetuning(exp):
+def finetuning_checks(exp):
     opt_dir = f'{exp_root}/{exp["name"]}'
 
-    os.makedirs(f"{opt_dir}/logs_s2_v3",exist_ok=True)
+    # This doesn't seem to actually be used
+    # os.makedirs(f"{opt_dir}/logs_s2_v3",exist_ok=True)
 
     # Perform same checks as webui
     assert os.path.exists(opt_dir)
@@ -138,7 +142,7 @@ def finetuning(exp):
         path = f"{opt_dir}/{f}"
         assert os.path.exists(path)
     
-    phone_path, hubert_path, wav_path, semantic_path = path_list[1:]
+    phone_path, hubert_path, wav_path, semantic_path = [os.path.join(opt_dir, f) for f in paths]
     with open(phone_path,'r',encoding='utf-8') as f:
         assert f.read(1)
     assert os.listdir(hubert_path)
@@ -150,6 +154,9 @@ def finetuning(exp):
 
     # 1. SoVITS
     # (does 's2' stand for 'stage 2'?)
+def sovits(exp):
+    opt_dir = f'{exp_root}/{exp["name"]}'
+    print("1. SoVITS")  
     with open("GPT_SoVITS/configs/s2.json","r",encoding="utf8") as f:
         config = json.load(f)
 
@@ -170,11 +177,11 @@ def finetuning(exp):
         "lora_rank": exp["sovits_lora_rank"],
         "name": exp["name"],
         "version": "v3",
-        "s2_ckpt_dir": opt_dir,
         "save_weight_dir": "SoVITS_weights_v3",
     })
-    config["train"]["model"]["version"] = "v3"
-    config["train"]["data"]["exp_dir"] = opt_dir
+    config["model"]["version"] = "v3"
+    config["data"]["exp_dir"] = opt_dir
+    config["s2_ckpt_dir"] = opt_dir 
 
     tmp_config_path = f"{tmp_dir}/tmp_s2.json"
     with open(tmp_config_path,"w") as f:
@@ -185,9 +192,14 @@ def finetuning(exp):
 
     # 2. GPT
     # (why did they switch to yaml?)
+def gpt(exp):
+    opt_dir = f'{exp_root}/{exp["name"]}'
+    print("2. GPT")
     with open("GPT_SoVITS/configs/s1longer-v2.yaml") as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
-    os.makedirs(f"{opt_dir}/logs_s1",exist_ok=True)
+
+    # This isn't used
+    # os.makedirs(f"{opt_dir}/logs_s1",exist_ok=True)
 
     if is_half:
         config["train"]["precision"] = "16-mixed"
@@ -195,7 +207,7 @@ def finetuning(exp):
         config["train"]["precision"] = "32"
     config["train"]["batch_size"] = GPT_BATCH_SIZE
     config["train"]["epochs"] = exp["gpt_epochs"]
-    config["pretrained_s1"] = GPT_MODEL_DIR
+    config["pretrained_s1"] = GPT_PRETRAINED_DIR
     config["train"]["save_every_n_epoch"] = GPT_SAVE_FREQUENCY
     config["train"]["if_save_every_weights"] = True
     config["train"]["if_save_latest"] = True
@@ -204,7 +216,7 @@ def finetuning(exp):
     config["train"]["exp_name"] = exp["name"]
     config["train_semantic_path"] = f"{opt_dir}/6-name2semantic.tsv"
     config["train_phoneme_path"] = f"{opt_dir}/2-name2text.txt"
-    config["output_dir"] = f"{opt_dir}/logs_s1_{version}"
+    config["output_dir"] = f"{opt_dir}/logs_s1_v3"
 
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     os.environ["hz"] = "25hz" # ???
@@ -221,6 +233,10 @@ for exp in EXPS:
     print(exp["name"])
     print("Preprocessing dataset...")
     dataset_formatting(exp)
-    print("Training...")
-    train(exp)
+    print("Finetuning...")
+    finetuning_checks(exp)
+    sovits(exp)
+    gpt(exp)
+
+
 # %%
