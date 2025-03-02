@@ -190,6 +190,7 @@ def sovits(exp):
     })
     config["model"]["version"] = "v3"
     config["data"]["exp_dir"] = opt_dir
+    config["name"] = exp["name"]
     config["s2_ckpt_dir"] = opt_dir 
 
     tmp_config_path = f"{tmp_dir}/tmp_s2.json"
