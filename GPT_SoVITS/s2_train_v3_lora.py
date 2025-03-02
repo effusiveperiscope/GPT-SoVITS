@@ -54,14 +54,18 @@ def main():
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = str(randint(20000, 55555))
 
-    mp.spawn(
-        run,
-        nprocs=n_gpus,
-        args=(
-            n_gpus,
-            hps,
-        ),
-    )
+    if os.name == "nt":
+        # Currently on Windows, saving checkpoints is bugged with multiple processes.
+        run(0, n_gpus, hps)
+    else:
+        mp.spawn(
+            run,
+            nprocs=n_gpus,
+            args=(
+                n_gpus,
+                hps,
+            ),
+        )
 
 
 def run(rank, n_gpus, hps):
