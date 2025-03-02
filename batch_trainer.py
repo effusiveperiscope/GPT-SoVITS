@@ -14,7 +14,7 @@ EXPS = [
         "name": "Mage Meadowbrook", # small dataset for testing
         "filelist_name": "Mage Meadowbrook",
         "sovits_lora_rank": 32,
-        "sovits_epochs": 2,
+        "sovits_epochs": 8,
         "gpt_epochs": 24
     }
 ]
@@ -186,8 +186,8 @@ def sovits(exp):
         "lora_rank": exp["sovits_lora_rank"],
         "name": exp["name"],
         "version": "v3",
-        "save_weight_dir": "SoVITS_weights_v3",
     })
+    config["save_weight_dir"] = "SoVITS_weights_v3"
     config["model"]["version"] = "v3"
     config["data"]["exp_dir"] = opt_dir
     config["name"] = exp["name"]
@@ -243,12 +243,14 @@ def gpt(exp):
 import torch
 def export_sovits(ckpt_file, export_file):
     model = torch.load(ckpt_file)
+    # problem: This also requires access to the relevant hps
+    raise NotImplementedError
 
 # %%
 for exp in EXPS:
     print(exp["name"])
-    print("Preprocessing dataset...")
-    dataset_formatting(exp)
+    # print("Preprocessing dataset...")
+    # dataset_formatting(exp)
     print("Finetuning...")
     finetuning_checks(exp)
     sovits(exp)
