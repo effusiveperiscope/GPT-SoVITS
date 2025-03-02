@@ -1,11 +1,18 @@
-# 0. Config
+# 0. Config / Setup
 # %%
 ANNOTATION_FILELIST_DIR = "" # /{exp name}.list
 WAVDIR = "" # Root for wav file paths
 EXPS = [
+    # {
+        # "name": "Twilight-32",
+        # "filelist_name": "Twilight",
+        # "sovits_lora_rank": 32,
+        # "sovits_epochs": 2,
+        # "gpt_epochs": 24
+    # }
     {
-        "name": "Twilight-32",
-        "filelist_name": "Twilight",
+        "name": "Mage Meadowbrook", # small dataset for testing
+        "filelist_name": "Mage Meadowbrook",
         "sovits_lora_rank": 32,
         "sovits_epochs": 2,
         "gpt_epochs": 24
@@ -58,6 +65,8 @@ def dataset_formatting(exp):
     if (len(wavdir)):
         assert os.path.exists(wavdir)
         assert os.path.isdir(wavdir)
+
+    os.makedirs(opt_dir, exist_ok=True)
 
     with open(annotation_filelist,"r",encoding="utf8") as f:
         line=f.readline().strip("\n")
@@ -188,7 +197,7 @@ def sovits(exp):
         json.dump(config,f,indent=4)
 
     cmd = f"{python_exec} GPT_SoVITS/s2_train_v3_lora.py --config {tmp_config_path}"
-    p = run(cmd, shell=True)
+    p = run(cmd, shell=True, stdout=open(f'{opt_dir}/sovits-stdout.log', 'w'), stderr=open(f'{opt_dir}/sovits-stderr.log', 'w'))
 
     # 2. GPT
     # (why did they switch to yaml?)
@@ -226,7 +235,13 @@ def gpt(exp):
         f.write(yaml.dump(config, default_flow_style=False))
 
     cmd = f"{python_exec} GPT_SoVITS/s1_train.py --config {tmp_config_path}"
-    p = run(cmd, shell=True)
+    p = run(cmd, shell=True, stdout=open(f'{opt_dir}/gpt-stdout.log', 'w'), stderr=open(f'{opt_dir}/gpt-stderr.log', 'w'))
+
+# Manual checkpoint export for sovits
+# (i.e. 'G_233333333333.pth')
+import torch
+def export_sovits(ckpt_file, export_file):
+    model = torch.load(ckpt_file)
 
 # %%
 for exp in EXPS:
@@ -236,7 +251,7 @@ for exp in EXPS:
     print("Finetuning...")
     finetuning_checks(exp)
     sovits(exp)
-    gpt(exp)
+    # gpt(exp)
 
 
 # %%
