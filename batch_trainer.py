@@ -3,20 +3,21 @@
 ANNOTATION_FILELIST_DIR = "" # /{exp name}.list
 WAVDIR = "" # Root for wav file paths
 EXPS = [
-    # {
-        # "name": "Twilight-32",
-        # "filelist_name": "Twilight",
-        # "sovits_lora_rank": 32,
-        # "sovits_epochs": 2,
-        # "gpt_epochs": 24
-    # }
     {
-        "name": "Mage Meadowbrook", # small dataset for testing
-        "filelist_name": "Mage Meadowbrook",
+        "name": "Twilight-32",
+        "filelist_name": "Twilight",
         "sovits_lora_rank": 32,
         "sovits_epochs": 8,
         "gpt_epochs": 24
-    }
+    },
+
+    # {
+        # "name": "Mage Meadowbrook", # small dataset for testing
+        # "filelist_name": "Mage Meadowbrook",
+        # "sovits_lora_rank": 32,
+        # "sovits_epochs": 8,
+        # "gpt_epochs": 24
+    # }
 ]
 BERT_PRETRAINED_DIR = "GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large"
 CNHUBERT_BASE_DIR = "GPT_SoVITS/pretrained_models/chinese-hubert-base"
