@@ -1,5 +1,6 @@
 
 import os, sys
+import threading
 
 from tqdm import tqdm
 now_dir = os.getcwd()
@@ -55,6 +56,7 @@ class TextPreprocessor:
         self.bert_model = bert_model
         self.tokenizer = tokenizer
         self.device = device
+        self.bert_lock = threading.RLock()
 
     def preprocess(self, text:str, lang:str, text_split_method:str, version:str="v2")->List[Dict]:
         print(f'############ {i18n("切分文本")} ############')
@@ -121,9 +123,9 @@ class TextPreprocessor:
         if language in {"en", "all_zh", "all_ja", "all_ko", "all_yue"}:
             language = language.replace("all_","")
             if language == "en":
-                LangSegment.setfilters(["en"])
+                #LangSegmenter.setfilters(["en"])
                 #formattext = " ".join(tmp["text"] for tmp in LangSegment.getTexts(text))
-                formattext = CustomArpabetProcessor.segment(LangSegment, text)
+                formattext = CustomArpabetProcessor.segment(LangSegmenter, text)
             else:
                 # 因无法区别中日韩文汉字,以用户输入为准
                 formattext = text
@@ -206,6 +208,7 @@ class TextPreprocessor:
         return phone_level_feature.T
 
     def clean_text_inf(self, text:str, language:str, version:str="v2"):
+        language = language.replace("all_","")
         phones, word2ph, norm_text = clean_text(text, language, version)
         phones = cleaned_text_to_sequence(phones, version)
         return phones, word2ph, norm_text
